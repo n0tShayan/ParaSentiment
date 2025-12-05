@@ -1,0 +1,155 @@
+daurnimator: So there are multiple forms for each instructions, you usally want to break up by arity
+daurnimator: so you want e.g. 2-arity mov
+daurnimator: e.g. ret is C2 for 1-arity or C3 for 0-arity
+daurnimator: to steal from the dynasm instruction table: `mov_2 = "OR:A3o|RO:A1O|mr:89Rm|rm:8BrM|rib:nB0ri|ridw:B8ri|mi:C70mi",` Which is saying that 2-arity mov has 7 forms
+daurnimator: integer register, fp register, index operand, immediate, jump taget
+Twitch Primealkama: http://ref.x86asm.net/coder64-abc.html
+firefox317: what about the msg paramtype xd
+Twitch Primealkama: and http://ref.x86asm.net/coder64.html depending on the directon :D
+radgeRayden: so andrew is writing an assembler (sorry I'm only checking occasionally)
+daurnimator: @radgeRayden yep
+Twitch Primealkama: looks like same kind of pb faced with linkers
+Marumoto: Q: I just joined but are you going to do relaxation?
+devicerailway845: is this for non-llvm backend?
+Marumoto: Replacing a jmp that takes a 32 bit displacement with a smaller displacement for example
+firefox317: yes @devicerailway845
+firefox317: eventually
+daurnimator: @devicerailway845 not exactly. more of a learning project for that *eventually*
+Marumoto: as you change the sizes of instructions then offsets/references need to change for other things
+kprotty: #catch unreachable
+daurnimator: @andrewrok even for things like your mov of `msg` there: do you need a 64bit immediate? or less?
+devicerailway845: what's the purpose? for a faster compiler?
+daurnimator: @devicerailway845 for andrew to learn how machine code gets generated
+devicerailway845: k
+Twitch Primealkama: machine code gen like that is also very good exercise to JIT
+Tjakka5: Been programming for 8 years and I have no idea what's going on, but it looks neat! :D
+I'll stick around for a while
+devicerailway845: @Tjakka5 low-level infra stuff
+tw0st3p: @Tjakka5 working toward making machine code from assembly in zig. starting with hello world.
+radgeRayden: @andrewrok set ft=nasm on vim to get rid of the lint errors
+radgeRayden: it thinks it's at&t syntax
+Tjakka5: So a parser for assembly? Or is that a massive oversimplification?
+daurnimator: @Tjakka5 yeah that's pretty much it for now
+Tjakka5: Very cool!
+Twitch Primealkama: intel is so much more readable
+Twitch Primealkama: dst, src versus src, dst :D
+but the at&t has so many prefixes everywhere that are painful to type
+Marumoto: @andrewrok What about symbols that are found in another object file (ie extern), or is the plan to not have multiple object files?
+radgeRayden: if I were to make my own syntax it would use src -> dst
+@GoogleBot42 is new here. Say hello!
+Twitch PrimeGoogleBot42: HeyGuys
+firefox317: ISA
+radgeRayden: arrows make everything better
+Marumoto: encoding
+Marumoto: https://wiki.osdev.org/X86-64_Instruction_Encoding
+Marumoto: OsDev is good enough for now
+daurnimator: see also "VEX prefix"
+Marumoto: combined with this https://www.felixcloutier.com/x86/
+vishenz: https://www.systutorials.com/72643/beginners-guide-x86-64-instruction-encoding/ is also semi OK
+@dzim is new here. Say hello!
+dzim: HeyGuys
+Twitch Primealkama: len is to have a simple way to calc length, whatever is input :D
+Marumoto: @andrewrok you gotta use objdump if you want to see the encoding
+Marumoto: but its not that helpful
+daurnimator: objdump -M intel
+Marumoto: https://stackoverflow.com/questions/15017659/how-to-read-the-intel-opcode-notation/53976236#53976236
+Twitch Primealkama: i prefer the tables in http://ref.x86asm.net/coder64-abc.html
+daurnimator: 2-arity mov is opcode A3.
+copysh: if you see r/m somewhere it refers to this table: https://sandpile.org/x86/opc_rm.htm
+daurnimator: sorry A3 is for from memory. not immediate
+Twitch Primealkama: some opcodes are 2 bytes (0F prefix)
+daurnimator: B8 is also a mov opcode :)
+vishenz: I think modrm comes first?
+Twitch Primealkama: register
+Twitch Primeerrpr_: blast from the past
+Twitch Primealkama: if you want to have opcode to instrucctions just remove the -abc from the url :D
+Twitch Primealkama: http://ref.x86asm.net/coder64.html
+vishenz: REX (0-1 bytes) | Opcode (1-3 bytes) | MODR/M (0 -1 bytes) | SIB (0-1 bytes) | Displacement (0, 1, 2 or 4 bytes) | Immediate (0, 1, 2 or 4 bytes)
+kprotty: Has this been linked already? Demos encoding an add instruction: http://www.c-jump.com/CIS77/CPU/x86/lecture.html#X77_0120_encoding_add
+Marumoto: Heres an example for 64 bit registers only
+Marumoto: https://gist.github.com/cairnc/4dafa8b06d717867eb5bab9494e5972f
+daurnimator: IIRC B8 only works up to dword/word sized immediates.
+Marumoto: EAX is special
+vishenz: EAX is different encoding from other registers
+jzelinskie: HeyGuys
+Marumoto: It is not straightforward
+Marumoto: or consistent
+daurnimator: @Marumoto eh its relatively consistent if you look in octal
+firefox317: Probably easier to do aarch64 because it is a RISC instead of CISC
+Twitch Primealkama: order 0-7 is A, C, D, B, SP, SPECIAL, SI, DI
+Twitch Primealkama: from same coder page "32/64-bit SIB Byte"
+Marumoto: @andrewrok I updated the gist with 'op reg64, imm32' for a few cases if you're interested
+Twitch PrimeSpectrerouge: hey just got in here, you adding inline asm support?
+Marumoto: These are the initial phases of a new backend
+Marumoto: which IMO is insanely unnecessary but also awesome
+Twitch Primealkama: https://nasm.us/doc/nasmdoc3.html#section-3.4.1 for nasm numeric constants
+Twitch Primemaxdeviant: Good to know I'm not the only one who refers to arbitrary groups of things as "these boys"
+Twitch Primealkama: coz they just wanna have fun?
+Twitch Primesuiradx: those across the pond call them these lads
+Twitch Primeerrpr_: so many disasters prevented
+daurnimator: @maxdeviant *bois
+mydeathmachine: Hello Andrew
+jzelinskie: i've been writing swift recently and i gotta save it makes you sick of "try" -- they have "try" "try!" "try?" all doing different things @_@
+jzelinskie: say**
+kprotty: getting closer
+jzelinskie: wikipedia says ppl call anything that isn't an opcode a pseudo-op
+jzelinskie: including data?
+jzelinskie: re:naming
+jzelinskie: is this just a toy or are you actually rewriting this portion of the compiler in zig?
+daurnimator: just a toy for now
+jzelinskie: i missed the beginning of the stream
+jzelinskie: ah cool, i was wondering why there was no llvm IR
+Twitch Primeerrpr_: tiny buffers
+Twitch Primeerrpr_: PogChamp
+recursivechat: you look like you dont get enough sleep :(
+jzelinskie: oh no! those are so delicious
+Twitch Primeerrpr_: that sucks, I just thought you were turning into a zombie
+recursivechat: ohh.. thats too bad
+mussimo: @andrewrok I was curious about the effect on comptime on compilation speed. Is it as bad as something like c++ templates?
+Twitch PrimeKristoff_it: intense friday night, looking forward for ep2
+daurnimator: oh cool you're still here
+daurnimator: I had to go fix a bike :P
+daurnimator: Q: have you thought about my Mixin solution at all? I have a PR ready to turn InStream/OutStream into a Mixin it once you merge the fifo PR.
+tw0st3p: thanks andrew. looking forward to more of this too. will you or anyone else be doing Advent of Code in zig?
+daurnimator: https://github.com/daurnimator/zig/commit/eaeb6d3d3e8ed3f9801927c037ec53ad4f55aabc <== OutStream as a Mixin :)
+recursivechat: Q: does your girlfriend also code? how do you explain to her that random coding != work?
+recursivechat: if not**
+daurnimator: @recursivechat how is this *not* work for andrew? considering he's getting paid (not much!) to work on zig full time
+deltatee: do you plan to have a large scale project to demo the language after it stabilizes a bit more and the self hosted compiler is "done"?
+deltatee: Little far in the future
+daurnimator: @deltatee his dream is to work on a DAW :)
+reductum: Yay!
+deltatee: That would be cool
+lunamnds: what's the plan for utf-8 in zig? i'd assume it isn't going to be something builtin, which then this becomes the question: would something in the standard library be in the roadmap? or would it be something external?
+daurnimator: @lunamnds there's already bits of it in the std library
+daurnimator: @lunamnds what particular part are you interested in?
+bikeshaving: you don’t do anything in private repos?
+daurnimator: yeah ICU or libidn(2)/libunistring
+mussimo: Q: is there a way to declare a one-time struct in zig? Example in C: struct { int x; int y;} point = {250, 150};
+daurnimator: @mussimo yep just go for it
+daurnimator: @mussimo `const myvar = struct {x: usize} {.x = 42}`
+lunamnds: I've been mostly asking this on behalf of a friend, so I can't ask it completly, but thanks a lot
+bikeshaving: you literally just showed your list of repositories haha
+mussimo: @daurnimator Perfect, I must have missed the syntax somewhere in the documentation. Thanks!
+deltatee: how does zig fair in network programming?
+daurnimator: @deltatee not great right now. hopefully a lot better after fifo stuff is merged :D
+daurnimator: actually the mixin stuff fixes the weird async buffer size hack for streams which was a cool realisation
+qbradley92: If I want to see standard lib eventing I/O changes while they are in progress, is there a branch I can look at?
+bikeshaving: `defer` is an intriguing alternative to `try`/`finally`
+Twitch Primeerrpr_: thats cool, go is a great model to take inspiration from
+kprotty: no wonder
+GriffinatorLoL: How old are you?
+daurnimator: @qbradley92 the basic concept is "on EAGAIN, add to scheduler's queue and suspend"
+GriffinatorLoL: !age
+qbradley92: In last week's chat, I thought I saw network related structs (TcpListener?) that I couldn't find in master yet
+daurnimator: oh congrats :)
+jzelinskie: you should go enjoy the rest of your friday night!
+jzelinskie: thanks for streaming andy!
+Twitch Primemaxdeviant: Q: How can I become a vim god like you?
+tw0st3p: thanks for sharing. hagn!
+qbradley92: Ok thanks!
+mussimo: HeyGuys
+see you next time
+reductum: Thanks for the stream!
+Twitch Primealkama: thhx!
+kprotty: have a nice night
